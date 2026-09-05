@@ -218,7 +218,23 @@
   .start-hero h1{
     font-size: 1.9rem;
     color: var(--color-ink);
-    max-width: 15ch;
+    max-width: 100%;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-title-desktop{ display: block; }
+  .hero-title-mobile{ display: none; }
+  .accent-travel{ color: var(--color-travel); font-weight: 700; }
+  .accent-harvest{ color: var(--color-harvest); font-weight: 600; }
+
+  @media (max-width: 560px){
+    .start-hero h1{
+      font-size: 1.82rem;
+      line-height: 1.42;
+      max-width: 12ch;
+    }
+    .hero-title-desktop{ display: none; }
+    .hero-title-mobile{ display: block; }
   }
 
   .flow-diagram{
@@ -616,7 +632,10 @@
   <!-- ============ 화면 1: 시작 ============ -->
   <section id="screen-start" class="screen active">
     <div class="start-hero">
-      <h1>여행 전엔 가장 유리한 지역을,<br>여행 후엔 제철 로컬푸드를 추천합니다.</h1>
+      <h1>
+        <span class="hero-title-desktop">여행 전엔 <span class="accent-travel">가장 유리한 지역</span>을,<br>여행 후엔 <span class="accent-harvest">제철 로컬푸드</span>를 추천합니다.</span>
+        <span class="hero-title-mobile">여행 전엔<br><span class="accent-travel">가장 유리한 지역</span>을,<br>여행 후엔<br><span class="accent-harvest">제철 로컬푸드</span>를<br>추천합니다.</span>
+      </h1>
       <p class="lede">거주지·일정·인원·예산만 알려주시면, 지역별 예상 혜택을 비교하고 여행 후 받을 페이백을 언제 무엇에 쓰면 좋을지까지 한 흐름으로 보여드려요.</p>
     </div>
 
