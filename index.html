@@ -599,6 +599,32 @@
   }
   .yn-btn.selected-yes{ border-color: var(--color-good); background: var(--color-good-soft); color: var(--color-good); }
   .yn-btn.selected-no{ border-color: var(--color-warn); background: var(--color-warn-soft); color: var(--color-warn); }
+  .yn-btn.selected-neutral{ border-color: var(--color-travel-line); background: var(--color-travel-soft); color: var(--color-travel); }
+
+  .conditional-reason{
+    display:none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--color-line);
+  }
+  .conditional-reason.show{ display:block; }
+  .conditional-reason label{
+    display:block;
+    font-size:.84rem;
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--color-ink-soft);
+  }
+  .conditional-reason select{
+    width:100%;
+    padding:10px 12px;
+    font-family:var(--font-body);
+    font-size:.9rem;
+    border:1.5px solid var(--color-line);
+    border-radius:8px;
+    background:var(--color-bg);
+    color:var(--color-ink);
+  }
 
   .feedback-q textarea{
     width: 100%;
@@ -795,6 +821,26 @@
     <p class="lede" style="margin-bottom:20px;">응답은 서비스 개선을 위한 참고 자료로만 사용돼요.</p>
 
     <div class="feedback-q">
+      <p class="q-text">최근 1년 내 지자체 여행지원·페이백으로 받은 지역화폐나 상품권을 전부 사용하지 못한 적이 있나요?</p>
+      <div class="yn-group" id="q0-group">
+        <button type="button" class="yn-btn" data-q="q0" data-val="예">예</button>
+        <button type="button" class="yn-btn" data-q="q0" data-val="아니오">아니오</button>
+        <button type="button" class="yn-btn" data-q="q0" data-val="받은 적 없음">받은 적 없음</button>
+      </div>
+      <div class="conditional-reason" id="q0-reason-wrap">
+        <label for="q0-reason">남긴 가장 큰 이유는 무엇이었나요?</label>
+        <select id="q0-reason">
+          <option value="">선택해주세요</option>
+          <option value="사용기한을 놓쳐서">사용기한을 놓쳐서</option>
+          <option value="어디서 쓸 수 있는지 몰라서">어디서 쓸 수 있는지 몰라서</option>
+          <option value="사고 싶은 것이 없어서">사고 싶은 것이 없어서</option>
+          <option value="다시 그 지역에 갈 일이 없어서">다시 그 지역에 갈 일이 없어서</option>
+          <option value="기타">기타</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="feedback-q">
       <p class="q-text">이 비교 결과가 여행지 선택에 도움이 되었나요?</p>
       <div class="yn-group" id="q1-group">
         <button type="button" class="yn-btn" data-q="q1" data-val="예">예</button>
@@ -927,11 +973,14 @@ function restartAll(){
   SELECTED_DETAIL_ID = null;
   SELECTED_FOOD_TAB_ID = null;
 
+  feedbackState.q0 = null;
   feedbackState.q1 = null;
   feedbackState.q2 = null;
   document.querySelectorAll(".yn-btn").forEach(function(btn){
-    btn.classList.remove("selected-yes", "selected-no");
+    btn.classList.remove("selected-yes", "selected-no", "selected-neutral");
   });
+  document.getElementById("q0-reason").value = "";
+  document.getElementById("q0-reason-wrap").classList.remove("show");
   document.getElementById("feedback-comment").value = "";
   document.getElementById("save-status").textContent = "";
 
@@ -1294,8 +1343,11 @@ function renderFood(regionId, results){
 /* =========================================================================
    6. 피드백 화면
    ========================================================================= */
-const feedbackState = { q1: null, q2: null };
+const feedbackState = { q0: null, q1: null, q2: null };
 
+document.getElementById("q0-group").addEventListener("click", function(e){
+  handleYnClick(e, "q0");
+});
 document.getElementById("q1-group").addEventListener("click", function(e){
   handleYnClick(e, "q1");
 });
@@ -1309,14 +1361,32 @@ function handleYnClick(e, qKey){
   feedbackState[qKey] = btn.dataset.val;
   const group = document.getElementById(qKey + "-group");
   group.querySelectorAll(".yn-btn").forEach(function(b){
-    b.classList.remove("selected-yes", "selected-no");
+    b.classList.remove("selected-yes", "selected-no", "selected-neutral");
   });
-  btn.classList.add(btn.dataset.val === "예" ? "selected-yes" : "selected-no");
+  if(btn.dataset.val === "예") btn.classList.add("selected-yes");
+  else if(btn.dataset.val === "아니오") btn.classList.add("selected-no");
+  else btn.classList.add("selected-neutral");
+
+  if(qKey === "q0") {
+    const reasonWrap = document.getElementById("q0-reason-wrap");
+    if(btn.dataset.val === "예") {
+      reasonWrap.classList.add("show");
+    } else {
+      reasonWrap.classList.remove("show");
+      document.getElementById("q0-reason").value = "";
+    }
+  }
 }
 
 function submitFeedback(){
-  if(!feedbackState.q1 || !feedbackState.q2){
-    alert("두 질문에 모두 응답해주세요.");
+  if(!feedbackState.q0 || !feedbackState.q1 || !feedbackState.q2){
+    alert("세 질문에 모두 응답해주세요.");
+    return;
+  }
+
+  const q0Reason = document.getElementById("q0-reason").value;
+  if(feedbackState.q0 === "예" && !q0Reason){
+    alert("지역화폐·상품권을 남긴 가장 큰 이유를 선택해주세요.");
     return;
   }
 
@@ -1329,6 +1399,8 @@ function submitFeedback(){
     budgetRange: LAST_INPUT ? budgetToRange(LAST_INPUT.budget) : "",
     ageGroup: LAST_INPUT && LAST_INPUT.isYouth ? "청년" : "일반",
     selectedRegion: SELECTED_DETAIL_ID || "",
+    q0_unused_experience: feedbackState.q0,
+    q0_unused_reason: q0Reason,
     q1_travel_helpful: feedbackState.q1,
     q2_payback_food_helpful: feedbackState.q2,
     comment: comment,
