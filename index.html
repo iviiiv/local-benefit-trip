@@ -1,173 +1,1347 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>여행혜택 계산기 — 지역상생 여행혜택 최적화 서비스</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>로컬베네핏 트립 — 여행 전 혜택 비교, 여행 후 로컬푸드 추천</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --color-bg: #F7F2E7;
+    --color-panel: #FFFDF8;
+    --color-ink: #221D17;
+    --color-ink-soft: #5B5346;
+    --color-line: #E1D5BC;
+
+    --color-travel: #1B2A4A;
+    --color-travel-soft: #E7EBF3;
+    --color-travel-line: #C7D0E4;
+
+    --color-harvest: #B85F1B;
+    --color-harvest-soft: #F5E4CE;
+    --color-harvest-line: #E7C295;
+
+    --color-good: #2F6844;
+    --color-good-soft: #E5EFE7;
+    --color-warn: #9C3B18;
+    --color-warn-soft: #F5E3D9;
+
+    --font-display: 'Song Myung', serif;
+    --font-body: 'IBM Plex Sans KR', system-ui, -apple-system, 'Malgun Gothic', sans-serif;
+
+    --radius-card: 10px;
+    --radius-pill: 999px;
+    --max-width: 720px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0; padding:0;
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body{
+    min-height: 100vh;
+  }
+
+  h1, h2, h3{
+    font-family: var(--font-display);
+    font-weight: 400;
+    margin: 0 0 .5rem 0;
+    line-height: 1.3;
+  }
+
+  p{ margin: 0 0 .9rem 0; }
+
+  .app{
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 28px 20px 80px;
+  }
+
+  .screen{ display:none; }
+  .screen.active{ display:block; animation: fadeIn .35s ease; }
+
+  @keyframes fadeIn{
+    from{ opacity:0; transform: translateY(6px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .screen.active{ animation: none; }
+  }
+
+  /* ---------- shared bits ---------- */
+
+  .brand{
+    display:flex; align-items:baseline; gap:10px; margin-bottom: 26px;
+  }
+  .brand-mark{
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--color-travel);
+  }
+  .brand-mark span{ color: var(--color-harvest); }
+
+  .lede{
+    font-size: 1.02rem;
+    color: var(--color-ink-soft);
+  }
+
+  .btn{
+    appearance: none;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 14px 26px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform .12s ease, opacity .12s ease;
+  }
+  .btn:active{ transform: scale(.98); }
+  .btn:focus-visible{ outline: 3px solid var(--color-travel); outline-offset: 2px; }
+
+  .btn-primary{
+    background: var(--color-travel);
+    color: #FBF8F1;
+  }
+  .btn-primary:hover{ opacity: .92; }
+
+  .btn-secondary{
+    background: transparent;
+    color: var(--color-travel);
+    border: 1.5px solid var(--color-travel-line);
+  }
+  .btn-secondary:hover{ background: var(--color-travel-soft); }
+
+  .btn-block{ width: 100%; justify-content: center; }
+
+  .field{
+    margin-bottom: 20px;
+  }
+  .field label{
+    display:block;
+    font-size: .92rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--color-ink);
+  }
+  .field .hint{
+    font-size: .82rem;
+    color: var(--color-ink-soft);
+    margin-top: 4px;
+  }
+  .field input[type="date"],
+  .field input[type="number"],
+  .field select{
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--font-body);
+    font-size: .98rem;
+    color: var(--color-ink);
+    background: var(--color-panel);
+    border: 1.5px solid var(--color-line);
+    border-radius: 8px;
+  }
+  .field input:focus, .field select:focus{
+    outline: none;
+    border-color: var(--color-travel);
+  }
+
+  .row-2{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 480px){
+    .row-2{ grid-template-columns: 1fr; }
+  }
+
+  .chip-group{ display:flex; gap: 10px; flex-wrap: wrap; }
+  .chip{
+    border: 1.5px solid var(--color-line);
+    background: var(--color-panel);
+    border-radius: var(--radius-pill);
+    padding: 9px 16px;
+    font-size: .92rem;
+    cursor: pointer;
+    color: var(--color-ink);
+  }
+  .chip.selected{
+    border-color: var(--color-travel);
+    background: var(--color-travel-soft);
+    color: var(--color-travel);
+    font-weight: 600;
+  }
+
+  .notice{
+    font-size: .84rem;
+    color: var(--color-ink-soft);
+    background: var(--color-panel);
+    border: 1px dashed var(--color-line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 18px 0;
+  }
+
+  .section-block{ margin: 34px 0; }
+  .section-block h2{ font-size: 1.28rem; }
+  .section-block .section-sub{
+    font-size: .9rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 16px;
+  }
+
+  hr.divider{
+    border: none;
+    border-top: 1px solid var(--color-line);
+    margin: 34px 0;
+  }
+
+  /* ---------- start screen ---------- */
+
+  .start-hero{
+    padding: 8px 0 6px;
+  }
+  .start-hero h1{
+    font-size: 1.9rem;
+    color: var(--color-ink);
+    max-width: 15ch;
+  }
+
+  .flow-diagram{
+    display:flex;
+    align-items: stretch;
+    gap: 10px;
+    margin: 26px 0 30px;
+  }
+  .flow-step{
+    flex: 1;
+    border-radius: var(--radius-card);
+    padding: 16px 14px;
+    font-size: .88rem;
+  }
+  .flow-step.before{
+    background: var(--color-travel-soft);
+    border: 1px solid var(--color-travel-line);
+    color: var(--color-travel);
+  }
+  .flow-step.after{
+    background: var(--color-harvest-soft);
+    border: 1px solid var(--color-harvest-line);
+    color: var(--color-harvest);
+  }
+  .flow-step .flow-label{
+    font-weight: 700;
+    font-size: .78rem;
+    margin-bottom: 6px;
+  }
+  .flow-arrow{
+    align-self: center;
+    color: var(--color-ink-soft);
+    font-size: 1.1rem;
+  }
+
+  /* ---------- input screen ---------- */
+
+  .fieldset-title{
+    font-size: 1.15rem;
+    margin-bottom: 4px;
+  }
+
+  /* ---------- processing screen ---------- */
+
+  .processing-wrap{
+    padding: 60px 0 40px;
+    text-align: center;
+  }
+  .spinner{
+    width: 46px; height: 46px;
+    margin: 0 auto 26px;
+    border-radius: 50%;
+    border: 4px solid var(--color-travel-soft);
+    border-top-color: var(--color-travel);
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .processing-steps{
+    list-style: none;
+    padding: 0; margin: 0 auto;
+    max-width: 320px;
+    text-align: left;
+  }
+  .processing-steps li{
+    padding: 8px 0 8px 26px;
+    position: relative;
+    font-size: .92rem;
+    color: var(--color-ink-soft);
+  }
+  .processing-steps li::before{
+    content: "";
+    position: absolute; left: 0; top: 14px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--color-line);
+  }
+  .processing-steps li.done{ color: var(--color-ink); }
+  .processing-steps li.done::before{ background: var(--color-good); }
+
+  /* ---------- result screen ---------- */
+
+  .summary-card{
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 520px){
+    .summary-card{ grid-template-columns: repeat(2, 1fr); }
+  }
+  .summary-item .summary-k{
+    font-size: .76rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 3px;
+  }
+  .summary-item .summary-v{
+    font-size: .96rem;
+    font-weight: 600;
+  }
+
+  .region-list{
+    display: grid;
+    gap: 14px;
+  }
+  .region-card{
+    position: relative;
+    background: var(--color-panel);
+    border: 1.5px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 18px 18px 16px 22px;
+    border-left-width: 6px;
+  }
+  .region-card.rank-1{ border-left-color: var(--color-travel); }
+  .region-card.rank-2{ border-left-color: var(--color-harvest); }
+  .region-card.rank-3{ border-left-color: var(--color-line); }
+  .region-card.ineligible{ opacity: .72; }
+
+  .region-head{
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin-bottom: 8px;
+  }
+  .region-head h3{
+    font-size: 1.15rem;
+  }
+  .region-rank-badge{
+    font-family: var(--font-display);
+    font-size: .85rem;
+    color: var(--color-ink-soft);
+  }
+  .region-tagline{
+    font-size: .86rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 12px;
+  }
+
+  .region-metrics{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  @media (max-width: 480px){
+    .region-metrics{ grid-template-columns: 1fr 1fr; }
+  }
+  .region-metric .m-k{ font-size: .74rem; color: var(--color-ink-soft); }
+  .region-metric .m-v{ font-size: .98rem; font-weight: 700; }
+
+  .status-pill{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    font-size: .8rem;
+    font-weight: 600;
+  }
+  .status-pill.ok{ background: var(--color-good-soft); color: var(--color-good); }
+  .status-pill.warn{ background: var(--color-warn-soft); color: var(--color-warn); }
+
+  .reason-box{
+    background: var(--color-travel-soft);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: .92rem;
+    color: var(--color-travel);
+    margin: 18px 0;
+  }
+  .reason-box .demo-tag{
+    display:block;
+    font-size: .72rem;
+    font-weight: 700;
+    color: var(--color-travel);
+    opacity: .75;
+    margin-bottom: 6px;
+  }
+
+  .detail-card{
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 20px;
+  }
+  .detail-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 480px){ .detail-grid{ grid-template-columns: 1fr; } }
+  .detail-grid .d-k{ font-size: .78rem; color: var(--color-ink-soft); }
+  .detail-grid .d-v{ font-size: 1rem; font-weight: 600; }
+
+  .condition-list{
+    margin: 0; padding-left: 18px;
+    font-size: .9rem;
+    color: var(--color-ink-soft);
+  }
+  .condition-list li{ margin-bottom: 4px; }
+
+  /* timeline */
+  .timeline{
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin: 22px 0 6px;
+    position: relative;
+  }
+  .timeline::before{
+    content:"";
+    position: absolute;
+    top: 9px; left: 4%; right: 4%;
+    height: 2px;
+    background: var(--color-harvest-line);
+  }
+  .t-step{
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    text-align: center;
+    font-size: .78rem;
+  }
+  .t-dot{
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--color-harvest-soft);
+    border: 2px solid var(--color-harvest);
+    margin: 0 auto 8px;
+  }
+  .t-step .t-label{ font-weight: 700; color: var(--color-harvest); margin-bottom: 3px; }
+  .t-step .t-date{ color: var(--color-ink-soft); }
+
+  .food-grid{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 560px){
+    .food-grid{ grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 380px){
+    .food-grid{ grid-template-columns: 1fr; }
+  }
+  .food-card{
+    background: var(--color-harvest-soft);
+    border: 1px solid var(--color-harvest-line);
+    border-radius: var(--radius-card);
+    padding: 14px;
+  }
+  .food-card .food-name{
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    color: var(--color-harvest);
+    margin-bottom: 4px;
+  }
+  .food-card .food-season{
+    font-size: .78rem;
+    color: var(--color-ink-soft);
+    margin-bottom: 8px;
+  }
+  .food-card .food-desc{
+    font-size: .85rem;
+    color: var(--color-ink);
+    margin: 0;
+  }
+
+  @media (max-width: 480px){
+    .timeline{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .timeline::before{
+      top: 8px; bottom: 8px; left: 8px; right: auto;
+      width: 2px; height: auto;
+    }
+    .t-step{
+      display: grid;
+      grid-template-columns: 22px 74px 1fr;
+      gap: 8px;
+      text-align: left;
+      align-items: start;
+    }
+    .t-dot{ margin: 1px 0 0 0; }
+    .t-step .t-label, .t-step .t-date{ margin: 0; }
+  }
+
+  .compare-2col{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 480px){ .compare-2col{ grid-template-columns: 1fr; } }
+  .compare-card{
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    background: var(--color-panel);
+  }
+  .compare-card h4{
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: .92rem;
+    margin: 0 0 8px;
+  }
+  .compare-card p{ font-size: .86rem; color: var(--color-ink-soft); margin:0; }
+
+  .official-notice{
+    background: var(--color-warn-soft);
+    border: 1px solid var(--color-harvest-line);
+    border-radius: var(--radius-card);
+    padding: 16px 18px;
+    font-size: .88rem;
+    color: var(--color-warn);
+    margin: 30px 0;
+  }
+
+  .region-tabs{
+    display:flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
+  }
+  .region-tab{
+    border: 1.5px solid var(--color-line);
+    background: var(--color-panel);
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    font-size: .88rem;
+    cursor: pointer;
+  }
+  .region-tab.active{
+    border-color: var(--color-harvest);
+    background: var(--color-harvest-soft);
+    color: var(--color-harvest);
+    font-weight: 700;
+  }
+
+  /* ---------- feedback screen ---------- */
+
+  .feedback-q{
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .feedback-q p.q-text{ font-weight: 600; margin-bottom: 12px; }
+  .yn-group{ display:flex; gap: 10px; margin-bottom: 12px; }
+  .yn-btn{
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--color-line);
+    background: var(--color-bg);
+    font-family: var(--font-body);
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .yn-btn.selected-yes{ border-color: var(--color-good); background: var(--color-good-soft); color: var(--color-good); }
+  .yn-btn.selected-no{ border-color: var(--color-warn); background: var(--color-warn-soft); color: var(--color-warn); }
+
+  .feedback-q textarea{
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    font-family: var(--font-body);
+    font-size: .9rem;
+    border: 1.5px solid var(--color-line);
+    border-radius: 8px;
+    resize: vertical;
+  }
+
+  .save-status{
+    font-size: .82rem;
+    color: var(--color-ink-soft);
+    margin-top: 8px;
+  }
+
+  .thanks-wrap{ padding: 60px 0; text-align: center; }
+  .thanks-wrap h2{ font-size: 1.5rem; margin-bottom: 10px; }
+
+  .footer-space{ height: 20px; }
+</style>
 </head>
 <body>
 
-<div class="demo-banner">데모 화면입니다. 아래 지역·금액은 실제 신청 결과가 아닌 가상의 예시 데이터입니다.</div>
+<div class="app">
 
-<header class="site-header">
-  <span class="site-header__mark">여행혜택 계산기</span>
-</header>
+  <div class="brand">
+    <span class="brand-mark">로컬베네핏<span>트립</span></span>
+  </div>
 
-<!-- 진행 단계 표시 (입력 화면 이후부터 노출) -->
-<nav class="steps" id="steps" hidden>
-  <ol>
-    <li data-step="input" class="steps__item">입력</li>
-    <li data-step="loading" class="steps__item">처리</li>
-    <li data-step="result" class="steps__item">결과</li>
-    <li data-step="feedback" class="steps__item">피드백</li>
-  </ol>
-</nav>
-
-<main id="app">
-
-  <!-- 화면 1: 랜딩 -->
-  <section class="screen" id="screen-landing" data-screen="landing">
-    <div class="hero">
-      <p class="hero__eyebrow">여행 전 5분, 지역 비교</p>
-      <h1 class="hero__headline">어디로 가야<br>더 많이 돌려받을까요</h1>
-      <p class="hero__body">
-        지자체마다 여행지원 조건과 신청 일정이 달라서, 나에게 유리한 지역을 찾으려면
-        공고문을 하나씩 뒤져야 해요. 조건을 한 번만 입력하면 지역별 예상 환급액과
-        체감 여행비를 비교해서 보여드려요.
-      </p>
-      <button class="btn btn--primary" id="btn-start">내 조건으로 비교하기</button>
-      <p class="hero__note">예상 소요 시간 1분 · 회원가입 없이 바로 확인</p>
+  <!-- ============ 화면 1: 시작 ============ -->
+  <section id="screen-start" class="screen active">
+    <div class="start-hero">
+      <h1>여행 전엔 가장 유리한 지역을,<br>여행 후엔 제철 로컬푸드를 추천합니다.</h1>
+      <p class="lede">거주지·일정·인원·예산만 알려주시면, 지역별 예상 혜택을 비교하고 여행 후 받을 페이백을 언제 무엇에 쓰면 좋을지까지 한 흐름으로 보여드려요.</p>
     </div>
-  </section>
 
-  <!-- 화면 2: 조건 입력 -->
-  <section class="screen" id="screen-input" data-screen="input" hidden>
-    <div class="panel">
-      <h2 class="panel__title">여행 조건을 알려주세요</h2>
-      <p class="panel__desc">입력하신 정보는 지역별 혜택 계산에만 사용돼요.</p>
-
-      <form id="form-input" novalidate>
-        <div class="field">
-          <label for="input-region">거주지</label>
-          <select id="input-region" required>
-            <option value="" disabled selected>시/도를 선택하세요</option>
-            <option>서울특별시</option><option>부산광역시</option><option>대구광역시</option>
-            <option>인천광역시</option><option>광주광역시</option><option>대전광역시</option>
-            <option>울산광역시</option><option>세종특별자치시</option><option>경기도</option>
-            <option>강원특별자치도</option><option>충청북도</option><option>충청남도</option>
-            <option>전북특별자치도</option><option>전라남도</option><option>경상북도</option>
-            <option>경상남도</option><option>제주특별자치도</option>
-          </select>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="input-date">여행 날짜</label>
-            <input type="date" id="input-date" required>
-          </div>
-          <div class="field">
-            <label for="input-people">인원</label>
-            <input type="number" id="input-people" min="1" max="20" value="2" required>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="input-budget">예상 여행 지출 (선택, 총액 기준 · 원)</label>
-          <input type="number" id="input-budget" min="0" step="10000" placeholder="비워두면 1인당 15만원으로 임시 계산해요">
-        </div>
-
-        <div class="consent">
-          <label class="consent__label">
-            <input type="checkbox" id="input-consent" required>
-            <span>입력하신 거주지·여행정보는 지역별 혜택 계산 및 서비스 개선 목적으로만 사용되며, 별도 저장 시 이 목적 외에 사용되지 않습니다.</span>
-          </label>
-        </div>
-
-        <p class="field-error" id="input-error" hidden></p>
-
-        <button type="submit" class="btn btn--primary">지역별 혜택 비교하기</button>
-      </form>
-    </div>
-  </section>
-
-  <!-- 화면 3: 처리 중 -->
-  <section class="screen" id="screen-loading" data-screen="loading" hidden>
-    <div class="loading">
-      <div class="loading__spinner" aria-hidden="true"></div>
-      <p class="loading__text">조건에 맞는 지역을 계산하고 있어요</p>
-    </div>
-  </section>
-
-  <!-- 화면 4: 결과 -->
-  <section class="screen" id="screen-result" data-screen="result" hidden>
-    <div class="panel panel--wide">
-      <div class="result-head">
-        <h2 class="panel__title">조건에 맞는 지역별 혜택</h2>
-        <label class="sort-control">
-          정렬
-          <select id="sort-select">
-            <option value="cost-asc">체감 여행비 낮은 순</option>
-            <option value="refund-desc">예상 환급액 높은 순</option>
-          </select>
-        </label>
+    <div class="flow-diagram">
+      <div class="flow-step before">
+        <div class="flow-label">여행 전</div>
+        내 조건에 맞는<br>지역별 혜택 비교
       </div>
-      <p class="result-summary" id="result-summary"></p>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step after">
+        <div class="flow-label">여행 후</div>
+        페이백 사용기한 안에<br>제철 로컬푸드 추천
+      </div>
+    </div>
 
-      <ul class="result-list" id="result-list"></ul>
+    <button class="btn btn-primary btn-block" onclick="goTo('screen-input')">내 조건으로 혜택 비교해보기</button>
 
-      <button class="btn btn--secondary" id="btn-to-feedback">의견 남기고 마치기</button>
+    <p class="notice">이 페이지는 수업용 웹 MVP 데모입니다. 실제 지자체명 대신 지역 A·B·C의 가정 데이터를 사용하며, 실제 서비스에서는 검증된 지자체 공식 공고 데이터를 연결합니다.</p>
+  </section>
+
+  <!-- ============ 화면 2: 조건 입력 ============ -->
+  <section id="screen-input" class="screen">
+    <h2 class="fieldset-title">여행 조건을 알려주세요</h2>
+    <p class="lede" style="margin-bottom:22px;">입력하신 정보는 개인을 식별하는 데 쓰이지 않고, 데모 혜택 비교 계산에만 사용됩니다.</p>
+
+    <div class="field">
+      <label for="input-residence">현재 거주지</label>
+      <select id="input-residence">
+        <option value="서울">서울</option>
+        <option value="경기">경기</option>
+        <option value="인천">인천</option>
+        <option value="충청">충청권</option>
+        <option value="전라">전라권</option>
+        <option value="경상">경상권</option>
+        <option value="강원">강원</option>
+        <option value="제주">제주</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>여행 가능 일정</label>
+      <div class="row-2">
+        <input type="date" id="input-start-date" />
+        <input type="date" id="input-end-date" />
+      </div>
+      <p class="hint">시작일과 종료일을 선택해주세요. 종료일 기준으로 데모 페이백 지급시점을 계산해요.</p>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label for="input-people">인원</label>
+        <input type="number" id="input-people" min="1" max="10" value="2" />
+      </div>
+      <div class="field">
+        <label for="input-budget">예상 여행 전체 예산 (원)</label>
+        <input type="number" id="input-budget" min="0" step="10000" value="300000" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>연령대 / 청년 여부</label>
+      <div class="chip-group" id="youth-chip-group">
+        <button type="button" class="chip selected" data-youth="false">일반</button>
+        <button type="button" class="chip" data-youth="true">청년 (19~34세)</button>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="runComparison()">혜택 비교하기</button>
+    <div style="height:14px"></div>
+    <button class="btn btn-secondary btn-block" onclick="goTo('screen-start')">이전으로</button>
+  </section>
+
+  <!-- ============ 화면 3: 처리 중 ============ -->
+  <section id="screen-processing" class="screen">
+    <div class="processing-wrap">
+      <div class="spinner"></div>
+      <ul class="processing-steps" id="processing-steps" aria-live="polite">
+        <li id="p-step-1">여행 조건 확인 중</li>
+        <li id="p-step-2">지역별 혜택 비교 중</li>
+        <li id="p-step-3">페이백 사용 시점 계산 중</li>
+        <li id="p-step-4">제철 로컬푸드 추천 준비 중</li>
+      </ul>
     </div>
   </section>
 
-  <!-- 화면 5: 피드백 -->
-  <section class="screen" id="screen-feedback" data-screen="feedback" hidden>
-    <div class="panel">
-      <h2 class="panel__title">마지막으로 한 가지만 여쭐게요</h2>
+  <!-- ============ 화면 4: 결과 ============ -->
+  <section id="screen-result" class="screen">
 
-      <div class="question">
-        <p class="question__text">이 결과가 여행지 선택에 도움이 됐나요?</p>
-        <div class="btn-group" data-question="helpful">
-          <button type="button" class="chip" data-value="helpful">도움됨</button>
-          <button type="button" class="chip" data-value="not-helpful">도움안됨</button>
+    <div class="section-block">
+      <h2>내 여행조건 요약</h2>
+      <div class="summary-card" id="summary-card"></div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="section-block">
+      <h2>어디가 가장 유리할까요?</h2>
+      <p class="section-sub">입력하신 조건을 기준으로 지역 A·B·C의 예상 혜택을 비교했어요.</p>
+      <div class="region-list" id="region-list"></div>
+    </div>
+
+    <div class="reason-box" id="reason-box"></div>
+
+    <hr class="divider" />
+
+    <div class="section-block">
+      <h2 id="detail-region-title">이 지역 혜택 자세히</h2>
+      <div class="detail-card">
+        <div class="detail-grid" id="detail-grid"></div>
+        <p style="font-size:.85rem; font-weight:700; margin-bottom:6px;">신청·사용 시 반드시 확인해야 할 조건</p>
+        <ul class="condition-list" id="condition-list"></ul>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="section-block">
+      <h2>페이백은 언제, 무엇에 쓰면 좋을까요?</h2>
+      <p class="section-sub">여행 종료일을 기준으로 예상 지급시점과 사용 가능 기간을 계산했어요.</p>
+      <div class="timeline" id="timeline"></div>
+    </div>
+
+    <div class="section-block">
+      <h2>그때 제철인 로컬푸드 <span style="font-family:var(--font-body);font-size:.72rem;font-weight:600;color:var(--color-ink-soft);">(데모 데이터)</span></h2>
+      <div class="region-tabs" id="food-region-tabs"></div>
+      <div class="food-grid" id="food-grid"></div>
+    </div>
+
+    <div class="reason-box" id="food-reason-box"></div>
+
+    <div class="section-block">
+      <h2>지금 살까, 페이백으로 나중에 살까?</h2>
+      <div class="compare-2col">
+        <div class="compare-card">
+          <h4>지금, 현지에서 구매</h4>
+          <p id="compare-now"></p>
+        </div>
+        <div class="compare-card">
+          <h4>나중에, 페이백으로 구매</h4>
+          <p id="compare-later"></p>
         </div>
       </div>
+    </div>
 
-      <div class="question">
-        <p class="question__text">지원혜택을 알기 전과 후에 여행지 선택이 달라질 것 같나요?</p>
-        <div class="btn-group" data-question="would-change">
-          <button type="button" class="chip" data-value="yes">예</button>
-          <button type="button" class="chip" data-value="no">아니오</button>
-          <button type="button" class="chip" data-value="unsure">잘모르겠음</button>
-        </div>
+    <div class="official-notice">
+      본 결과는 일부 지자체 샘플 데이터를 활용한 MVP 데모입니다. 실제 신청자격·지원금·지급일·사용기한·지역화폐 사용 가능 여부는 반드시 해당 지자체의 최신 공식 공고를 확인하세요.
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="goTo('screen-feedback')">이 결과가 도움이 되었나요?</button>
+  </section>
+
+  <!-- ============ 화면 5: 피드백 ============ -->
+  <section id="screen-feedback" class="screen">
+    <h2>솔직한 의견을 들려주세요</h2>
+    <p class="lede" style="margin-bottom:20px;">응답은 서비스 개선을 위한 참고 자료로만 사용돼요.</p>
+
+    <div class="feedback-q">
+      <p class="q-text">이 비교 결과가 여행지 선택에 도움이 되었나요?</p>
+      <div class="yn-group" id="q1-group">
+        <button type="button" class="yn-btn" data-q="q1" data-val="예">예</button>
+        <button type="button" class="yn-btn" data-q="q1" data-val="아니오">아니오</button>
       </div>
+    </div>
 
-      <p class="field-error" id="feedback-error" hidden>두 질문에 모두 답해주세요.</p>
+    <div class="feedback-q">
+      <p class="q-text">페이백 지급시점과 제철 로컬푸드 추천이 실제 소비계획에 도움이 될 것 같나요?</p>
+      <div class="yn-group" id="q2-group">
+        <button type="button" class="yn-btn" data-q="q2" data-val="예">예</button>
+        <button type="button" class="yn-btn" data-q="q2" data-val="아니오">아니오</button>
+      </div>
+    </div>
 
-      <button class="btn btn--primary" id="btn-submit-feedback">의견 보내기</button>
+    <div class="feedback-q">
+      <p class="q-text">그 이유가 있다면 한 줄로 알려주세요. (선택)</p>
+      <textarea id="feedback-comment" placeholder="예: 사용기한 안에 뭘 사야할지 몰랐는데 도움이 됐어요"></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-block" onclick="submitFeedback()">피드백 제출</button>
+    <div class="save-status" id="save-status"></div>
+  </section>
+
+  <!-- ============ 화면 6: 감사 ============ -->
+  <section id="screen-thanks" class="screen">
+    <div class="thanks-wrap" aria-live="polite">
+      <h2>의견을 남겨주셔서 감사합니다.</h2>
+      <p class="lede" id="thanks-message">더 나은 여행 계획을 위해 소중히 참고할게요.</p>
+      <button class="btn btn-secondary" onclick="restartAll()">처음으로 돌아가기</button>
     </div>
   </section>
 
-  <!-- 화면 6: 완료 -->
-  <section class="screen" id="screen-done" data-screen="done" hidden>
-    <div class="hero hero--done">
-      <h2 class="hero__headline hero__headline--small">소중한 의견 감사합니다</h2>
-      <p class="hero__body">
-        보내주신 응답은 서비스 개선에만 활용돼요. 이 화면은 데모용 MVP이며,
-        실제 신청·환급은 각 지자체 공식 채널에서 진행해야 해요.
-      </p>
-    </div>
-  </section>
+</div>
 
-</main>
+<script>
+/* =========================================================================
+   0. Google Apps Script 연동 설정
+   ========================================================================= */
+// Google Apps Script 웹앱 URL 입력 (비워두면 데모 모드로만 동작합니다)
+const GOOGLE_SCRIPT_URL = "";
 
-<footer class="site-footer">
-  <p>이 페이지는 검증용 데모입니다. 지역·환급 조건은 실제 공고와 다를 수 있으니 신청 전 반드시 해당 지자체 공식 공고를 확인하세요.</p>
-</footer>
+/* =========================================================================
+   1. 샘플 지역 데이터 (실제 지자체 아님, 데모 가정값)
+   ========================================================================= */
+const REGIONS = [
+  {
+    id: "A",
+    name: "지역 A",
+    tagline: "가을 단풍과 사과가 유명한 산간 지역",
+    programName: "데모 반값여행 지원사업 (가정값)",
+    payoutMethod: "지역상품권 (모바일)",
+    excludedResidence: ["서울", "경기", "인천"],
+    refundType: "rate",
+    refundRateAdult: 0.5,
+    refundRateYouth: 0.7,
+    perPersonCapAdult: 100000,
+    perPersonCapYouth: 140000,
+    groupCap: 500000,
+    maxGroupSizeForCap: 5,
+    minSpend: 100000,
+    payoutDelayDays: 30,
+    usageWindowDays: 180,
+    specialty: [
+      { name: "사과", seasonMonths: [9,10,11], desc: "선선한 가을 바람에 당도가 오르는 지역 대표 과일이에요." },
+      { name: "한우 등심", seasonMonths: [11,12,1], desc: "날이 추워지며 수요가 느는 지역 축제 단골 메뉴예요." },
+      { name: "곶감", seasonMonths: [11,12], desc: "가을 볕에 말려 겨울에 맛이 드는 건조 특산물이에요." }
+    ]
+  },
+  {
+    id: "B",
+    name: "지역 B",
+    tagline: "해안선을 따라 해산물과 감이 풍부한 지역",
+    programName: "데모 지역상생 여행 페이백 (가정값)",
+    payoutMethod: "지역화폐 (카드형)",
+    excludedResidence: [],
+    refundType: "rate",
+    refundRateAdult: 0.4,
+    refundRateYouth: 0.4,
+    perPersonCapAdult: 80000,
+    perPersonCapYouth: 80000,
+    groupCap: 350000,
+    maxGroupSizeForCap: 5,
+    minSpend: 60000,
+    payoutDelayDays: 20,
+    usageWindowDays: 365,
+    specialty: [
+      { name: "감", seasonMonths: [10,11], desc: "단맛이 절정에 오르는 시기의 지역 대표 과일이에요." },
+      { name: "멸치액젓", seasonMonths: [3,4,5,9,10], desc: "물이 좋은 봄·가을에 담근 액젓이 특히 인기예요." },
+      { name: "굴", seasonMonths: [11,12,1,2], desc: "찬 바닷물에서 살이 오르는 겨울철 별미예요." }
+    ]
+  },
+  {
+    id: "C",
+    name: "지역 C",
+    tagline: "섬과 갯벌이 어우러진 청정 어촌 지역",
+    programName: "데모 근로자 휴가형 여행지원 (가정값)",
+    payoutMethod: "지역상품권 (지류)",
+    excludedResidence: [],
+    refundType: "flat",
+    flatAmountAdult: 100000,
+    flatAmountYouth: 100000,
+    perPersonCapAdult: 100000,
+    perPersonCapYouth: 100000,
+    groupCap: 300000,
+    maxGroupSizeForCap: 3,
+    minSpend: 150000,
+    payoutDelayDays: 45,
+    usageWindowDays: 90,
+    specialty: [
+      { name: "미역", seasonMonths: [2,3,4], desc: "물살이 좋은 봄철에 채취해 향이 특히 깊어요." },
+      { name: "전복", seasonMonths: [6,7,8], desc: "여름철 양식장에서 살이 차오르는 시기예요." },
+      { name: "꼬막", seasonMonths: [11,12,1], desc: "겨울 갯벌에서 나는 쫄깃한 조개류예요." }
+    ]
+  }
+];
 
-<script src="script.js"></script>
+/* =========================================================================
+   2. 화면 전환
+   ========================================================================= */
+function goTo(screenId){
+  document.querySelectorAll(".screen").forEach(function(s){ s.classList.remove("active"); });
+  document.getElementById(screenId).classList.add("active");
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+function restartAll(){
+  LAST_RESULTS = null;
+  LAST_INPUT = null;
+  SELECTED_DETAIL_ID = null;
+  SELECTED_FOOD_TAB_ID = null;
+
+  feedbackState.q1 = null;
+  feedbackState.q2 = null;
+  document.querySelectorAll(".yn-btn").forEach(function(btn){
+    btn.classList.remove("selected-yes", "selected-no");
+  });
+  document.getElementById("feedback-comment").value = "";
+  document.getElementById("save-status").textContent = "";
+
+  goTo("screen-start");
+}
+
+/* 연령대 칩 선택 */
+document.getElementById("youth-chip-group").addEventListener("click", function(e){
+  const btn = e.target.closest(".chip");
+  if(!btn) return;
+  this.querySelectorAll(".chip").forEach(function(c){ c.classList.remove("selected"); });
+  btn.classList.add("selected");
+});
+
+/* =========================================================================
+   3. 계산 로직 (규칙 기반 — AI가 아닌 JavaScript 코드가 계산)
+   ========================================================================= */
+function addDays(dateObj, days){
+  const d = new Date(dateObj.getTime());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function formatDate(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return y + "." + m + "." + day;
+}
+
+function formatWon(n){
+  return Math.round(n).toLocaleString("ko-KR") + "원";
+}
+
+function getMonthsBetween(startDate, endDate){
+  const months = new Set();
+  const cur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+  let guard = 0;
+  while(cur.getTime() <= end.getTime() && guard < 36){
+    months.add(cur.getMonth() + 1);
+    cur.setMonth(cur.getMonth() + 1);
+    guard++;
+  }
+  return Array.from(months);
+}
+
+function calcRegionResult(region, input){
+  const residenceExcluded = region.excludedResidence.includes(input.residence);
+  const meetsMinSpend = input.budget >= region.minSpend;
+  const eligible = !residenceExcluded && meetsMinSpend;
+
+  let benefit = 0;
+  if(eligible){
+    // input.budget은 "여행 전체 예산"이다.
+    // 따라서 전체 예산에 환급률을 한 번만 적용하고, 인원은 "인당 한도" 계산에만 반영한다.
+    const effectivePeople = Math.min(input.people, region.maxGroupSizeForCap);
+
+    if(region.refundType === "flat"){
+      const flatPerPerson = input.isYouth ? region.flatAmountYouth : region.flatAmountAdult;
+      benefit = Math.min(flatPerPerson * effectivePeople, region.groupCap);
+    } else {
+      const rate = input.isYouth ? region.refundRateYouth : region.refundRateAdult;
+      const perPersonCap = input.isYouth ? region.perPersonCapYouth : region.perPersonCapAdult;
+      const rateBasedBenefit = input.budget * rate;
+      const peopleBasedCap = perPersonCap * effectivePeople;
+      benefit = Math.min(rateBasedBenefit, peopleBasedCap, region.groupCap);
+    }
+  }
+
+  const feltCost = Math.max(input.budget - benefit, 0);
+
+  const payoutDate = addDays(input.endDate, region.payoutDelayDays);
+  const usageDeadline = addDays(payoutDate, region.usageWindowDays);
+  const monthsInWindow = getMonthsBetween(payoutDate, usageDeadline);
+  const seasonalMatches = region.specialty.filter(function(s){
+    return s.seasonMonths.some(function(m){ return monthsInWindow.indexOf(m) !== -1; });
+  });
+  const seasonalList = seasonalMatches.length > 0 ? seasonalMatches : region.specialty;
+
+  return {
+    region: region,
+    eligible: eligible,
+    residenceExcluded: residenceExcluded,
+    meetsMinSpend: meetsMinSpend,
+    benefit: benefit,
+    feltCost: feltCost,
+    payoutDate: payoutDate,
+    usageDeadline: usageDeadline,
+    seasonalList: seasonalList
+  };
+}
+
+/* =========================================================================
+   4. 실행 흐름: 입력 → 처리 애니메이션 → 결과 렌더
+   ========================================================================= */
+let LAST_RESULTS = null;
+let LAST_INPUT = null;
+let SELECTED_DETAIL_ID = null;
+let SELECTED_FOOD_TAB_ID = null;
+
+function setDefaultTravelDates(){
+  const startEl = document.getElementById("input-start-date");
+  const endEl = document.getElementById("input-end-date");
+  if(startEl.value || endEl.value) return;
+
+  const today = new Date();
+  const start = addDays(today, 14);
+  const end = addDays(start, 2);
+  const toInputDate = function(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return y + "-" + m + "-" + day;
+  };
+  startEl.value = toInputDate(start);
+  endEl.value = toInputDate(end);
+}
+
+setDefaultTravelDates();
+
+function runComparison(){
+  const residence = document.getElementById("input-residence").value;
+  const startVal = document.getElementById("input-start-date").value;
+  const endVal = document.getElementById("input-end-date").value;
+  const people = parseInt(document.getElementById("input-people").value, 10) || 1;
+  const budget = parseInt(document.getElementById("input-budget").value, 10) || 0;
+  const isYouth = document.querySelector('#youth-chip-group .chip.selected').dataset.youth === "true";
+
+  if(people < 1 || people > 10){
+    alert("인원은 1명 이상 10명 이하로 입력해주세요.");
+    return;
+  }
+  if(budget <= 0){
+    alert("예상 여행 예산을 입력해주세요.");
+    return;
+  }
+
+  if(!startVal || !endVal){
+    alert("여행 시작일과 종료일을 모두 선택해주세요.");
+    return;
+  }
+
+  const startDate = new Date(startVal);
+  const endDate = new Date(endVal);
+  if(endDate.getTime() < startDate.getTime()){
+    alert("종료일은 시작일보다 이후여야 해요.");
+    return;
+  }
+
+  LAST_INPUT = { residence, startDate, endDate, people, budget, isYouth };
+
+  goTo("screen-processing");
+  ["p-step-1","p-step-2","p-step-3","p-step-4"].forEach(function(id){
+    document.getElementById(id).classList.remove("done");
+  });
+
+  const delays = [250, 550, 850, 1150];
+  delays.forEach(function(ms, idx){
+    setTimeout(function(){
+      document.getElementById("p-step-" + (idx + 1)).classList.add("done");
+    }, ms);
+  });
+
+  setTimeout(function(){
+    LAST_RESULTS = REGIONS.map(function(r){ return calcRegionResult(r, LAST_INPUT); });
+    renderResult(LAST_INPUT, LAST_RESULTS);
+    goTo("screen-result");
+  }, 1450);
+}
+
+/* =========================================================================
+   5. 결과 렌더링
+   ========================================================================= */
+function renderResult(input, results){
+  // 5-1. 조건 요약
+  const summaryCard = document.getElementById("summary-card");
+  summaryCard.innerHTML = [
+    summaryItem("거주지", input.residence),
+    summaryItem("일정", formatDate(input.startDate) + " ~ " + formatDate(input.endDate)),
+    summaryItem("인원", input.people + "명"),
+    summaryItem("예산", formatWon(input.budget))
+  ].join("");
+
+  // 5-2. 지역 비교 및 순위 (자격 충족 우선, 체감비용 낮은 순)
+  const sorted = results.slice().sort(function(a, b){
+    if(a.eligible !== b.eligible) return a.eligible ? -1 : 1;
+    return a.feltCost - b.feltCost;
+  });
+
+  const regionListEl = document.getElementById("region-list");
+  regionListEl.innerHTML = sorted.map(function(r, idx){ return renderRegionCard(r, idx); }).join("");
+
+  const topEligible = sorted.find(function(r){ return r.eligible; });
+  SELECTED_DETAIL_ID = topEligible ? topEligible.region.id : sorted[0].region.id;
+  SELECTED_FOOD_TAB_ID = SELECTED_DETAIL_ID;
+
+  // 추천 이유 (규칙 기반 설명 템플릿)
+  document.getElementById("reason-box").innerHTML = buildRegionReason(sorted, input);
+
+  // 5-3. 상세 지역
+  renderDetail(SELECTED_DETAIL_ID);
+
+  // 5-4. 제철 로컬푸드 탭
+  renderFoodTabs(results);
+  renderFood(SELECTED_FOOD_TAB_ID, results);
+}
+
+function summaryItem(k, v){
+  return '<div class="summary-item"><div class="summary-k">' + k + '</div><div class="summary-v">' + v + '</div></div>';
+}
+
+function renderRegionCard(r, idx){
+  const rankClass = "rank-" + (idx + 1);
+  const eligClass = r.eligible ? "" : " ineligible";
+  let statusHtml = "";
+  if(r.eligible){
+    statusHtml = '<span class="status-pill ok">지원 가능</span>';
+  } else if(r.residenceExcluded){
+    statusHtml = '<span class="status-pill warn">거주지 조건 확인 필요</span>';
+  } else if(!r.meetsMinSpend){
+    statusHtml = '<span class="status-pill warn">최소 소비금액 미달</span>';
+  } else {
+    statusHtml = '<span class="status-pill warn">조건 확인 필요</span>';
+  }
+
+  return (
+    '<div class="region-card ' + rankClass + eligClass + '">' +
+      '<div class="region-head">' +
+        '<h3>' + r.region.name + '</h3>' +
+        '<span class="region-rank-badge">' + (idx + 1) + '순위</span>' +
+      '</div>' +
+      '<p class="region-tagline">' + r.region.tagline + '</p>' +
+      '<div class="region-metrics">' +
+        '<div class="region-metric"><div class="m-k">예상 여행비</div><div class="m-v">' + formatWon(LAST_INPUT ? LAST_INPUT.budget : 0) + '</div></div>' +
+        '<div class="region-metric"><div class="m-k">예상 혜택</div><div class="m-v">' + formatWon(r.benefit) + '</div></div>' +
+        '<div class="region-metric"><div class="m-k">체감 여행비</div><div class="m-v">' + formatWon(r.feltCost) + '</div></div>' +
+      '</div>' +
+      statusHtml +
+      ' <button class="btn btn-secondary" style="padding:8px 14px; font-size:.82rem; margin-left:8px;" onclick="selectDetail(\'' + r.region.id + '\')">자세히 보기</button>' +
+    '</div>'
+  );
+}
+
+function buildRegionReason(sorted, input){
+  const top = sorted.find(function(r){ return r.eligible; });
+  let text = "";
+  if(!top){
+    text = "입력하신 조건에서는 세 지역 모두 거주지 제한이나 최소 소비금액 조건을 충족하지 못했어요. 예산을 조정하거나 다른 거주지 조건으로 다시 시도해보세요.";
+  } else {
+    const gapVsSecond = sorted.filter(function(r){ return r.eligible && r.region.id !== top.region.id; })[0];
+    text = top.region.name + "이(가) 입력하신 조건에서 체감 여행비 " + formatWon(top.feltCost) + "로 가장 유리해요. ";
+    text += "예산 " + formatWon(input.budget) + " 중 약 " + formatWon(top.benefit) + "을(를) 혜택으로 돌려받을 수 있을 것으로 계산됐어요.";
+    if(input.isYouth){
+      text += " 청년 조건이 적용 가능한 지역은 환급 한도가 더 높게 계산돼요.";
+    }
+    if(gapVsSecond){
+      const diff = gapVsSecond.feltCost - top.feltCost;
+      if(diff > 0){
+        text += " 다음으로 유리한 " + gapVsSecond.region.name + "보다 체감 여행비가 약 " + formatWon(diff) + " 더 낮아요.";
+      }
+    }
+  }
+  return '<span class="demo-tag">데모용 규칙 기반 추천 결과</span>' + text;
+}
+
+function selectDetail(regionId){
+  SELECTED_DETAIL_ID = regionId;
+  SELECTED_FOOD_TAB_ID = regionId;
+  renderDetail(regionId);
+  renderFoodTabs(LAST_RESULTS);
+  renderFood(regionId, LAST_RESULTS);
+  document.getElementById("detail-region-title").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderDetail(regionId){
+  const r = LAST_RESULTS.find(function(x){ return x.region.id === regionId; });
+  document.getElementById("detail-region-title").textContent = r.region.name + " 혜택 자세히";
+
+  document.getElementById("detail-grid").innerHTML = [
+    detailItem("사업명", r.region.programName),
+    detailItem("지급 방식", r.region.payoutMethod),
+    detailItem("예상 페이백", formatWon(r.benefit)),
+    detailItem("예상 지급시점", formatDate(r.payoutDate)),
+    detailItem("사용기한", formatDate(r.usageDeadline) + "까지"),
+    detailItem("지원 자격", r.eligible ? "조건 충족" : "조건 확인 필요")
+  ].join("");
+
+  const conditions = [];
+  conditions.push("최소 소비금액: " + formatWon(r.region.minSpend) + " 이상 (데모 가정값)");
+  if(r.region.excludedResidence.length > 0){
+    conditions.push("거주지 제한: " + r.region.excludedResidence.join(", ") + " 거주자는 지원 대상에서 제외 (데모 가정값)");
+  } else {
+    conditions.push("거주지 제한 없음 (데모 가정값)");
+  }
+  conditions.push("실제 신청기간, 인정 소비 업종, 최종 환급률은 반드시 해당 지자체의 공식 공고에서 확인하세요.");
+  document.getElementById("condition-list").innerHTML = conditions.map(function(c){ return "<li>" + c + "</li>"; }).join("");
+
+  renderTimeline(r);
+  renderCompare(r);
+}
+
+function detailItem(k, v){
+  return '<div><div class="d-k">' + k + '</div><div class="d-v">' + v + '</div></div>';
+}
+
+function renderTimeline(r){
+  const steps = [
+    { label: "여행", date: formatDate(LAST_INPUT.startDate) + " ~ " + formatDate(LAST_INPUT.endDate) },
+    { label: "신청", date: "여행 후 공식 절차에 따라 신청" },
+    { label: "예상 지급", date: formatDate(r.payoutDate) },
+    { label: "사용기한", date: formatDate(r.usageDeadline) + "까지" }
+  ];
+  document.getElementById("timeline").innerHTML = steps.map(function(s){
+    return '<div class="t-step"><div class="t-dot"></div><div class="t-label">' + s.label + '</div><div class="t-date">' + s.date + '</div></div>';
+  }).join("");
+}
+
+function renderCompare(r){
+  document.getElementById("compare-now").textContent =
+    "현지에서 바로 구매하면 그 계절 신선도를 바로 즐길 수 있지만, 아직 페이백을 받기 전이라 별도 현금을 먼저 써야 해요.";
+  document.getElementById("compare-later").textContent =
+    "페이백은 약 " + formatDate(r.payoutDate) + " 이후 지급되고 " + formatDate(r.usageDeadline) + "까지 사용할 수 있어요. 이 기간 안의 제철 상품과 맞춰 계획하면 페이백을 다 쓸 수 있어요.";
+}
+
+/* 제철 로컬푸드 탭 */
+function renderFoodTabs(results){
+  const tabsEl = document.getElementById("food-region-tabs");
+  tabsEl.innerHTML = results.map(function(r){
+    const activeClass = (r.region.id === SELECTED_FOOD_TAB_ID) ? " active" : "";
+    return '<button type="button" class="region-tab' + activeClass + '" onclick="selectFoodTab(\'' + r.region.id + '\')">' + r.region.name + '</button>';
+  }).join("");
+}
+
+function selectFoodTab(regionId){
+  SELECTED_FOOD_TAB_ID = regionId;
+  SELECTED_DETAIL_ID = regionId;
+  renderFoodTabs(LAST_RESULTS);
+  renderFood(regionId, LAST_RESULTS);
+  renderDetail(regionId);
+}
+
+function renderFood(regionId, results){
+  const r = results.find(function(x){ return x.region.id === regionId; });
+  document.getElementById("food-grid").innerHTML = r.seasonalList.map(function(f){
+    return (
+      '<div class="food-card">' +
+        '<div class="food-name">' + f.name + '</div>' +
+        '<div class="food-season">제철: ' + f.seasonMonths.map(function(m){ return m + "월"; }).join(", ") + '</div>' +
+        '<p class="food-desc">' + f.desc + '</p>' +
+      '</div>'
+    );
+  }).join("");
+
+  document.getElementById("food-reason-box").innerHTML =
+    '<span class="demo-tag">데모용 규칙 기반 추천 결과</span>' +
+    r.region.name + '의 페이백 사용 가능 기간(' + formatDate(r.payoutDate) + ' ~ ' + formatDate(r.usageDeadline) + ') 동안 제철을 맞는 상품 위주로 정리했어요. 실제 출하량·재고·가격은 방문 전 지역 특산물몰이나 직매장에서 다시 확인해주세요.';
+}
+
+/* =========================================================================
+   6. 피드백 화면
+   ========================================================================= */
+const feedbackState = { q1: null, q2: null };
+
+document.getElementById("q1-group").addEventListener("click", function(e){
+  handleYnClick(e, "q1");
+});
+document.getElementById("q2-group").addEventListener("click", function(e){
+  handleYnClick(e, "q2");
+});
+
+function handleYnClick(e, qKey){
+  const btn = e.target.closest(".yn-btn");
+  if(!btn) return;
+  feedbackState[qKey] = btn.dataset.val;
+  const group = document.getElementById(qKey + "-group");
+  group.querySelectorAll(".yn-btn").forEach(function(b){
+    b.classList.remove("selected-yes", "selected-no");
+  });
+  btn.classList.add(btn.dataset.val === "예" ? "selected-yes" : "selected-no");
+}
+
+function submitFeedback(){
+  if(!feedbackState.q1 || !feedbackState.q2){
+    alert("두 질문에 모두 응답해주세요.");
+    return;
+  }
+
+  const comment = document.getElementById("feedback-comment").value.trim();
+  const statusEl = document.getElementById("save-status");
+
+  const payload = {
+    residence: LAST_INPUT ? LAST_INPUT.residence : "",
+    people: LAST_INPUT ? LAST_INPUT.people : "",
+    budgetRange: LAST_INPUT ? budgetToRange(LAST_INPUT.budget) : "",
+    ageGroup: LAST_INPUT && LAST_INPUT.isYouth ? "청년" : "일반",
+    selectedRegion: SELECTED_DETAIL_ID || "",
+    q1_travel_helpful: feedbackState.q1,
+    q2_payback_food_helpful: feedbackState.q2,
+    comment: comment,
+    timestamp: new Date().toISOString()
+  };
+
+  if(!GOOGLE_SCRIPT_URL){
+    document.getElementById("thanks-message").textContent = "데모 모드라 응답은 서버에 저장되지 않았어요. 화면 흐름 검증용으로만 사용됩니다.";
+    goTo("screen-thanks");
+    return;
+  }
+
+  statusEl.textContent = "저장 중입니다...";
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  }).then(function(){
+    document.getElementById("thanks-message").textContent = "응답을 저장했어요. 더 나은 여행 계획을 위해 소중히 참고할게요.";
+    goTo("screen-thanks");
+  }).catch(function(){
+    document.getElementById("thanks-message").textContent = "저장 연결에 실패했어요. 데모 화면은 정상 동작하며, Apps Script URL을 다시 확인해주세요.";
+    goTo("screen-thanks");
+  });
+}
+
+function budgetToRange(budget){
+  if(budget < 200000) return "20만원 미만";
+  if(budget < 400000) return "20~40만원";
+  if(budget < 600000) return "40~60만원";
+  return "60만원 이상";
+}
+</script>
+
 </body>
 </html>
