@@ -832,15 +832,11 @@
         <button type="button" class="yn-btn" data-q="q0" data-val="받은 적 없음">받은 적 없음</button>
       </div>
       <div class="conditional-reason" id="q0-reason-wrap">
-        <label for="q0-reason">남긴 가장 큰 이유는 무엇이었나요?</label>
+        <label for="q0-reason" id="q0-reason-label">가장 가까운 답변을 선택해주세요.</label>
         <select id="q0-reason">
-          <option value="">선택해주세요</option>
-          <option value="사용기한을 놓쳐서">사용기한을 놓쳐서</option>
-          <option value="어디서 쓸 수 있는지 몰라서">어디서 쓸 수 있는지 몰라서</option>
-          <option value="사고 싶은 것이 없어서">사고 싶은 것이 없어서</option>
-          <option value="다시 그 지역에 갈 일이 없어서">다시 그 지역에 갈 일이 없어서</option>
-          <option value="기타">기타</option>
+          <option value="">먼저 위에서 답변을 선택해주세요</option>
         </select>
+        <p class="hint" id="q0-reason-hint" style="margin:7px 0 0;">선택한 경험에 따라 후속 질문이 달라집니다.</p>
       </div>
     </div>
 
@@ -983,7 +979,9 @@ function restartAll(){
   document.querySelectorAll(".yn-btn").forEach(function(btn){
     btn.classList.remove("selected-yes", "selected-no", "selected-neutral");
   });
-  document.getElementById("q0-reason").value = "";
+  document.getElementById("q0-reason").innerHTML = '<option value="">먼저 위에서 답변을 선택해주세요</option>';
+  document.getElementById("q0-reason-label").textContent = "가장 가까운 답변을 선택해주세요.";
+  document.getElementById("q0-reason-hint").textContent = "선택한 경험에 따라 후속 질문이 달라집니다.";
   document.getElementById("q0-reason-wrap").classList.remove("show");
   document.getElementById("feedback-comment").value = "";
   document.getElementById("save-status").textContent = "";
@@ -1372,14 +1370,72 @@ function handleYnClick(e, qKey){
   else btn.classList.add("selected-neutral");
 
   if(qKey === "q0") {
-    const reasonWrap = document.getElementById("q0-reason-wrap");
-    if(btn.dataset.val === "예") {
-      reasonWrap.classList.add("show");
-    } else {
-      reasonWrap.classList.remove("show");
-      document.getElementById("q0-reason").value = "";
-    }
+    updateQ0Followup(btn.dataset.val);
   }
+}
+
+const Q0_FOLLOWUPS = {
+  "예": {
+    label: "전부 사용하지 못한 가장 큰 이유는 무엇이었나요?",
+    hint: "페이백을 실제로 쓰는 과정에서 어디에서 막혔는지 확인합니다.",
+    options: [
+      "사용기한을 놓쳐서",
+      "어디서 쓸 수 있는지 몰라서",
+      "사고 싶은 상품·서비스가 없어서",
+      "다시 그 지역에 갈 일이 없어서",
+      "잔액이 애매하게 남아서",
+      "기타"
+    ]
+  },
+  "아니오": {
+    label: "받은 지역화폐·상품권은 주로 어떻게 사용했나요?",
+    hint: "현재 사람들이 실제로 쓰는 방법과 기존 대안을 파악합니다.",
+    options: [
+      "여행 중 현지 가맹점에서 사용",
+      "여행 후 지역화폐 앱·기존 사용 플랫폼에서 사용처를 찾아 사용",
+      "지자체 특산물몰·지역 온라인몰에서 사용",
+      "해당 지역을 다시 방문해 사용",
+      "가족·지인과 함께 사용할 곳을 찾아 소진",
+      "기타"
+    ]
+  },
+  "받은 적 없음": {
+    label: "최근 1년 내 여행지원·페이백을 이용하지 않은 가장 큰 이유는 무엇인가요?",
+    hint: "혜택을 받기 전 단계에서의 진입 장벽을 파악합니다.",
+    options: [
+      "그런 지원제도가 있는지 몰랐음",
+      "여행계획이 촉박해 사전신청을 못함",
+      "신청 절차·조건 확인이 번거로워서",
+      "알았을 때 이미 모집·예산이 마감됨",
+      "거주지·일정 등 신청 조건이 맞지 않았음",
+      "혜택이 크지 않다고 느껴 신청하지 않음",
+      "최근 1년 내 해당 지역 여행 기회가 없었음",
+      "기타"
+    ]
+  }
+};
+
+function updateQ0Followup(answer){
+  const cfg = Q0_FOLLOWUPS[answer];
+  const wrap = document.getElementById("q0-reason-wrap");
+  const label = document.getElementById("q0-reason-label");
+  const select = document.getElementById("q0-reason");
+  const hint = document.getElementById("q0-reason-hint");
+  select.innerHTML = '<option value="">선택해주세요</option>';
+  if(!cfg){
+    wrap.classList.remove("show");
+    return;
+  }
+  label.textContent = cfg.label;
+  hint.textContent = cfg.hint;
+  cfg.options.forEach(function(optionText){
+    const option = document.createElement("option");
+    option.value = optionText;
+    option.textContent = optionText;
+    select.appendChild(option);
+  });
+  select.value = "";
+  wrap.classList.add("show");
 }
 
 function submitFeedback(){
@@ -1389,8 +1445,8 @@ function submitFeedback(){
   }
 
   const q0Reason = document.getElementById("q0-reason").value;
-  if(feedbackState.q0 === "예" && !q0Reason){
-    alert("지역화폐·상품권을 남긴 가장 큰 이유를 선택해주세요.");
+  if(!q0Reason){
+    alert("첫 번째 질문의 후속 항목도 선택해주세요.");
     return;
   }
 
@@ -1404,7 +1460,7 @@ function submitFeedback(){
     ageGroup: LAST_INPUT && LAST_INPUT.isYouth ? "청년" : "일반",
     selectedRegion: SELECTED_DETAIL_ID || "",
     q0_unused_experience: feedbackState.q0,
-    q0_unused_reason: q0Reason,
+    q0_followup_detail: q0Reason,
     q1_travel_helpful: feedbackState.q1,
     q2_payback_food_helpful: feedbackState.q2,
     comment: comment,
