@@ -818,7 +818,11 @@
   <!-- ============ 화면 5: 피드백 ============ -->
   <section id="screen-feedback" class="screen">
     <h2>솔직한 의견을 들려주세요</h2>
-    <p class="lede" style="margin-bottom:20px;">응답은 서비스 개선을 위한 참고 자료로만 사용돼요.</p>
+    <p class="lede" style="margin-bottom:12px;">응답은 수업용 MVP의 가설 검증과 기능 개선을 위해 사용돼요.</p>
+    <div class="notice" style="margin-top:0; margin-bottom:20px;">
+      응답은 <strong>익명으로 Google Sheets에 저장</strong>됩니다. 이름·전화번호·이메일은 수집하지 않으며,
+      입력 조건 요약(거주지·인원·예산대·연령대), 추천지역, 설문 응답과 선택 의견만 저장합니다.
+    </div>
 
     <div class="feedback-q">
       <p class="q-text">최근 1년 내 지자체 여행지원·페이백으로 받은 지역화폐나 상품권을 전부 사용하지 못한 적이 있나요?</p>
@@ -1420,7 +1424,7 @@ function submitFeedback(){
     headers: { "Content-Type": "text/plain;charset=utf-8" },
     body: JSON.stringify(payload)
   }).then(function(){
-    document.getElementById("thanks-message").textContent = "응답을 저장했어요. 더 나은 여행 계획을 위해 소중히 참고할게요.";
+    document.getElementById("thanks-message").textContent = "응답이 익명으로 저장되었습니다. 수업용 MVP의 가설 검증과 기능 개선에만 활용합니다.";
     goTo("screen-thanks");
   }).catch(function(){
     document.getElementById("thanks-message").textContent = "저장 연결에 실패했어요. 데모 화면은 정상 동작하며, Apps Script URL을 다시 확인해주세요.";
