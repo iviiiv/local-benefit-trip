@@ -1,1 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>여행혜택 계산기 — 지역상생 여행혜택 최적화 서비스</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
+<div class="demo-banner">데모 화면입니다. 아래 지역·금액은 실제 신청 결과가 아닌 가상의 예시 데이터입니다.</div>
+
+<header class="site-header">
+  <span class="site-header__mark">여행혜택 계산기</span>
+</header>
+
+<!-- 진행 단계 표시 (입력 화면 이후부터 노출) -->
+<nav class="steps" id="steps" hidden>
+  <ol>
+    <li data-step="input" class="steps__item">입력</li>
+    <li data-step="loading" class="steps__item">처리</li>
+    <li data-step="result" class="steps__item">결과</li>
+    <li data-step="feedback" class="steps__item">피드백</li>
+  </ol>
+</nav>
+
+<main id="app">
+
+  <!-- 화면 1: 랜딩 -->
+  <section class="screen" id="screen-landing" data-screen="landing">
+    <div class="hero">
+      <p class="hero__eyebrow">여행 전 5분, 지역 비교</p>
+      <h1 class="hero__headline">어디로 가야<br>더 많이 돌려받을까요</h1>
+      <p class="hero__body">
+        지자체마다 여행지원 조건과 신청 일정이 달라서, 나에게 유리한 지역을 찾으려면
+        공고문을 하나씩 뒤져야 해요. 조건을 한 번만 입력하면 지역별 예상 환급액과
+        체감 여행비를 비교해서 보여드려요.
+      </p>
+      <button class="btn btn--primary" id="btn-start">내 조건으로 비교하기</button>
+      <p class="hero__note">예상 소요 시간 1분 · 회원가입 없이 바로 확인</p>
+    </div>
+  </section>
+
+  <!-- 화면 2: 조건 입력 -->
+  <section class="screen" id="screen-input" data-screen="input" hidden>
+    <div class="panel">
+      <h2 class="panel__title">여행 조건을 알려주세요</h2>
+      <p class="panel__desc">입력하신 정보는 지역별 혜택 계산에만 사용돼요.</p>
+
+      <form id="form-input" novalidate>
+        <div class="field">
+          <label for="input-region">거주지</label>
+          <select id="input-region" required>
+            <option value="" disabled selected>시/도를 선택하세요</option>
+            <option>서울특별시</option><option>부산광역시</option><option>대구광역시</option>
+            <option>인천광역시</option><option>광주광역시</option><option>대전광역시</option>
+            <option>울산광역시</option><option>세종특별자치시</option><option>경기도</option>
+            <option>강원특별자치도</option><option>충청북도</option><option>충청남도</option>
+            <option>전북특별자치도</option><option>전라남도</option><option>경상북도</option>
+            <option>경상남도</option><option>제주특별자치도</option>
+          </select>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="input-date">여행 날짜</label>
+            <input type="date" id="input-date" required>
+          </div>
+          <div class="field">
+            <label for="input-people">인원</label>
+            <input type="number" id="input-people" min="1" max="20" value="2" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="input-budget">예상 여행 지출 (선택, 총액 기준 · 원)</label>
+          <input type="number" id="input-budget" min="0" step="10000" placeholder="비워두면 1인당 15만원으로 임시 계산해요">
+        </div>
+
+        <div class="consent">
+          <label class="consent__label">
+            <input type="checkbox" id="input-consent" required>
+            <span>입력하신 거주지·여행정보는 지역별 혜택 계산 및 서비스 개선 목적으로만 사용되며, 별도 저장 시 이 목적 외에 사용되지 않습니다.</span>
+          </label>
+        </div>
+
+        <p class="field-error" id="input-error" hidden></p>
+
+        <button type="submit" class="btn btn--primary">지역별 혜택 비교하기</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- 화면 3: 처리 중 -->
+  <section class="screen" id="screen-loading" data-screen="loading" hidden>
+    <div class="loading">
+      <div class="loading__spinner" aria-hidden="true"></div>
+      <p class="loading__text">조건에 맞는 지역을 계산하고 있어요</p>
+    </div>
+  </section>
+
+  <!-- 화면 4: 결과 -->
+  <section class="screen" id="screen-result" data-screen="result" hidden>
+    <div class="panel panel--wide">
+      <div class="result-head">
+        <h2 class="panel__title">조건에 맞는 지역별 혜택</h2>
+        <label class="sort-control">
+          정렬
+          <select id="sort-select">
+            <option value="cost-asc">체감 여행비 낮은 순</option>
+            <option value="refund-desc">예상 환급액 높은 순</option>
+          </select>
+        </label>
+      </div>
+      <p class="result-summary" id="result-summary"></p>
+
+      <ul class="result-list" id="result-list"></ul>
+
+      <button class="btn btn--secondary" id="btn-to-feedback">의견 남기고 마치기</button>
+    </div>
+  </section>
+
+  <!-- 화면 5: 피드백 -->
+  <section class="screen" id="screen-feedback" data-screen="feedback" hidden>
+    <div class="panel">
+      <h2 class="panel__title">마지막으로 한 가지만 여쭐게요</h2>
+
+      <div class="question">
+        <p class="question__text">이 결과가 여행지 선택에 도움이 됐나요?</p>
+        <div class="btn-group" data-question="helpful">
+          <button type="button" class="chip" data-value="helpful">도움됨</button>
+          <button type="button" class="chip" data-value="not-helpful">도움안됨</button>
+        </div>
+      </div>
+
+      <div class="question">
+        <p class="question__text">지원혜택을 알기 전과 후에 여행지 선택이 달라질 것 같나요?</p>
+        <div class="btn-group" data-question="would-change">
+          <button type="button" class="chip" data-value="yes">예</button>
+          <button type="button" class="chip" data-value="no">아니오</button>
+          <button type="button" class="chip" data-value="unsure">잘모르겠음</button>
+        </div>
+      </div>
+
+      <p class="field-error" id="feedback-error" hidden>두 질문에 모두 답해주세요.</p>
+
+      <button class="btn btn--primary" id="btn-submit-feedback">의견 보내기</button>
+    </div>
+  </section>
+
+  <!-- 화면 6: 완료 -->
+  <section class="screen" id="screen-done" data-screen="done" hidden>
+    <div class="hero hero--done">
+      <h2 class="hero__headline hero__headline--small">소중한 의견 감사합니다</h2>
+      <p class="hero__body">
+        보내주신 응답은 서비스 개선에만 활용돼요. 이 화면은 데모용 MVP이며,
+        실제 신청·환급은 각 지자체 공식 채널에서 진행해야 해요.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>이 페이지는 검증용 데모입니다. 지역·환급 조건은 실제 공고와 다를 수 있으니 신청 전 반드시 해당 지자체 공식 공고를 확인하세요.</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
